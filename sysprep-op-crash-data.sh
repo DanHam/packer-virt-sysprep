@@ -14,3 +14,5 @@ for CRASH_DATA in ${CRASH_DATA_LOCATIONS[@]}
 do
     rm -rf ${CRASH_DATA}
 done
+
+exit 0

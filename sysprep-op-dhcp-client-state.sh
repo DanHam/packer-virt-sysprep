@@ -14,3 +14,5 @@ for LEASE_DATA in ${LEASE_DATA_LOCATIONS[@]}
 do
     rm -rf ${LEASE_DATA}
 done
+
+exit 0
