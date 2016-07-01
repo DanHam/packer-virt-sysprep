@@ -103,7 +103,7 @@ then
     # Stop Services
     for SERVICE in ${SERVICES}
     do
-        systemctl stop ${SOCKET} &>/dev/null
+        systemctl stop ${SERVICES} &>/dev/null
     done
     # The auditd service needs special treatment on systemd based systems
     # The service itself cannot be stopped with systemctl. However,
