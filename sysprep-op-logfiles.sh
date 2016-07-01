@@ -92,6 +92,7 @@ if [ "${SYSV}" = true ]; then
                 egrep -v ${SYSV_EXCL})"
 fi
 
+# Stop all but essential system services
 if [ "${SYSD}" = true ]
 then
     # Sockets can reactivate services and should be stopped first
@@ -117,6 +118,11 @@ then
         service ${SERVICE} stop &>/dev/null
     done
 fi
+
+
+# Attempt to synchronize any cached writes to prevent log files being
+# written to post removal
+sync
 
 
 # Now all but essential services have been stopped all logging should be
