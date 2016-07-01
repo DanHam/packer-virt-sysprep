@@ -62,9 +62,9 @@ SYSV_LIST="^blk-availability|^messagebus|^network|^restorecond|^sshd"
 SYSV_EXCL="^killall|^halt"
 
 # Determine if we are running on a systemd or sys-v-init based system
-[[ "x$(command -v systemctl)" = "x" ]] || SYSD="true" && SYSV="true"
+[[ "x$(command -v systemctl)" != "x" ]] && SYSD="true" || SYSV="true"
 
-# Get list of services that need to be stopped
+# Get list of services and corresponding sockets that need to be stopped
 if [ "${SYSD}" = true ]; then
     # systemd services list
     SERVICES="$(systemctl list-units --state running --type service | \
@@ -72,7 +72,14 @@ if [ "${SYSD}" = true ]; then
                 grep -Pv ${SYSD_LIST_1} | \
                 grep -Pv ${SYSD_LIST_2} | \
                 cut -d' ' -f1)"
-else
+    # systemd sockets list
+    SOCKETS="$(systemctl list-units --state running --type socket | \
+               grep ^.*.socket | \
+               grep -Pv ${SYSD_LIST_1} | \
+               grep -Pv ${SYSD_LIST_2} | \
+               cut -d' ' -f1)"
+fi
+if [ "${SYSV}" = true ]; then
     # sys-v services list. This is actually a list of _all_ services as
     # there doesn't seem to be a nice way to enumerate the names of
     # running services with chkconfig or service --status-all. For some
@@ -85,17 +92,31 @@ else
                 egrep -v ${SYSV_EXCL})"
 fi
 
-# Loop through and stop services
-for SERVICE in ${SERVICES}
-do
-    [[ "${SYSD}" ]] && systemctl stop ${SERVICE} &>/dev/null
-    [[ "${SYSV}" ]] && service ${SERVICE} stop &>/dev/null
-done
-# The auditd service needs special treatment on systemd based systems
-# The service itself cannot be stopped with systemctl. However, logging
-# can be stopped using the service command
-[[ "${SYSD}" ]] && service auditd stop &>/dev/null
+if [ "${SYSD}" = true ]
+then
+    # Sockets can reactivate services and should be stopped first
+    for SOCKET in ${SOCKETS}
+    do
+        systemctl stop ${SOCKET} &>/dev/null
+    done
+    # Stop Services
+    for SERVICE in ${SERVICES}
+    do
+        systemctl stop ${SOCKET} &>/dev/null
+    done
+    # The auditd service needs special treatment on systemd based systems
+    # The service itself cannot be stopped with systemctl. However,
+    # logging can be stopped using the service command
+    service auditd stop &>/dev/null
+fi
 
+if [ "${SYSV}" = true ]
+then
+    for SERVICE in ${SERVICES}
+    do
+        service ${SERVICE} stop &>/dev/null
+    done
+fi
 
 
 # Now all but essential services have been stopped all logging should be
