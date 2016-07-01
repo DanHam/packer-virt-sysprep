@@ -45,9 +45,20 @@ LOG_FILE_LOCATIONS=(
   "/etc/Pegasus/*.srl"
 )
 
-# Essential services list for systemd based system (formatted for egrep)
-SYSD_LIST="^auditd|^dbus|^getty|^network|^sshd|^systemd|^user"
+# Essential services list for systemd based system - any services not
+# matched by the lists below will be stopped.
+# These are formatted for use with grep -P. While the P (Perl compatible
+# regex) flag is experimental this seems to work ok. The lines are split
+# for readability purposes only.
+SYSD_LIST_1="^auditd|^dbus|^getty|^network|^sshd|^user"
+# When used in the context below this will result in the systemd-journald
+# service being stopped. All other systemd services will be untouched
+SYSD_LIST_2="^systemd-(?!journald.*)"
+
+# Essential services list for sys-v-init based systems - any services not
+# matched by the lists below will be stopped.
 SYSV_LIST="^blk-availability|^messagebus|^network|^restorecond|^sshd"
+# Entries under /etc/init.d that we don't want to match
 SYSV_EXCL="^killall|^halt"
 
 # Determine if we are running on a systemd or sys-v-init based system
@@ -58,7 +69,8 @@ if [ "${SYSD}" = true ]; then
     # systemd services list
     SERVICES="$(systemctl list-units --state running --type service | \
                 grep ^.*.service | \
-                egrep -v ${SYSD_LIST} | \
+                grep -Pv ${SYSD_LIST_1} | \
+                grep -Pv ${SYSD_LIST_2} | \
                 cut -d' ' -f1)"
 else
     # sys-v services list. This is actually a list of _all_ services as
