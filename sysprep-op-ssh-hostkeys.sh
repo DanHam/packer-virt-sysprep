@@ -45,8 +45,8 @@ then
     # The /etc/rc.local script is replaced with the script we need to run
     # and restored by the script when it is run
     cp /etc/rc.local /etc/rc.local.bak
-    printf "%s" "\
-        #!/usr/bin/env bash
+    printf "%s" \
+        '#!/usr/bin/env bash
         #
         # Ensure the existance of ssh host keys for the system.
         # Configure the sshd service to start at boot and ensure it is
@@ -74,7 +74,7 @@ then
         mv -f /etc/rc.local.bak /etc/rc.local
 
         exit 0
-    " | sed 's/^ *//g' > /etc/rc.local
+    ' | sed 's/^ *//g' > /etc/rc.local
 fi
 
 exit 0
