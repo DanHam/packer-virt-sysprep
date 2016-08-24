@@ -52,7 +52,7 @@ done
 
 # Test for tmpfs filesystem at /dev/shm creating one if it doesn't exist
 # If /dev/shm is not present, attempt to create it. Exit on failure
-if [ "x$(mount | grep tmpfs | grep /dev/shm)" = "x" ]
+if [ "x$(mount -l -type tmpfs | grep /dev/shm)" = "x" ]
 then
     [[ -d /dev/shm ]] || mkdir /dev/shm && chmod 1777 /dev/shm
     mount -t tmpfs -o defaults,size=128m tmpfs /dev/shm
