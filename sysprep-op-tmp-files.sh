@@ -41,10 +41,13 @@ shopt -s dotglob
 SUM_TMP_SPACE=0
 for TMP in ${TMP_LOCATIONS[@]}
 do
-    TMP_SPACE="$(du -sm ${TMP} | cut -f1)"
+    if [ -d ${TMP} ]; then
+        TMP_SPACE="$(du -sm ${TMP} | cut -f1)"
+    else
+        TMP_SPACE=0
+    fi
     SUM_TMP_SPACE=$(( ${SUM_TMP_SPACE} + ${TMP_SPACE} ))
-    if [ ${SUM_TMP_SPACE} -gt 128 ]
-    then
+    if [ ${SUM_TMP_SPACE} -gt 128 ]; then
         echo "ERROR: Space for copying tmp into memory > 128mb. Exiting"
         exit 1
     fi
@@ -52,12 +55,10 @@ done
 
 # Test for tmpfs filesystem at /dev/shm creating one if it doesn't exist
 # If /dev/shm is not present, attempt to create it. Exit on failure
-if [ "x$(mount -l -type tmpfs | grep /dev/shm)" = "x" ]
-then
+if [ "x$(mount -l -t tmpfs | grep /dev/shm)" = "x" ]; then
     [[ -d /dev/shm ]] || mkdir /dev/shm && chmod 1777 /dev/shm
     mount -t tmpfs -o defaults,size=128m tmpfs /dev/shm
-    if [ $? -ne 0 ]
-    then
+    if [ $? -ne 0 ]; then
         echo "ERROR: Could not create tmpfs file system. Exiting"
         exit 1
     fi
@@ -97,11 +98,12 @@ do
         for LINE in $(df | tr -s ' ')
         do
             # Sixth column of df output is the mountpoint
-            if [ "x$(echo $LINE | cut -d' ' -f6 | grep ^${TMP}$)" != "x" ]
-            then
+            MNTPNT="$(echo ${LINE} | cut -d' ' -f6 | grep ^${TMP}$)"
+            if [ "x${MNTPNT}" != "x" ]; then
                 # First column of df output is the device
                 TMP_LOCATED_ON="$(echo $LINE | cut -d' ' -f1)"
             fi
+            unset MNTPNT
         done
         IFS=${DEFIFS} # Restore the default IFS and split behaviour
         # If the temp directory is not a mounted partition it must be on
@@ -127,8 +129,7 @@ do
         # file system
         mkdir ${MNTPNT_ORIG_TMP}
         # Mount or bind mount in order to access the original on disk temp
-        if [ ${TMP_LOCATED_ON} = "/" ]
-        then
+        if [ ${TMP_LOCATED_ON} = "/" ]; then
             # Temp file system is a folder on the root file system
             MOUNT_OPTS="--bind"
             # Contents will be under mount point + original path e.g
