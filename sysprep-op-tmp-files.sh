@@ -68,7 +68,6 @@ fi
 # Main
 for TMP in ${TMP_LOCATIONS[@]}
 do
-
     # Test if the path or its parents are already on a tmpfs file system
     TMP_PATH="${TMP}"
     ON_TMPFS=false
@@ -149,9 +148,7 @@ do
         [[ -e ${FILES} ]] && rm -rf ${TMP_PATH}/*
         # Cleanup
         umount ${MNTPNT_ORIG_TMP} && rm -rf ${MNTPNT_ORIG_TMP}
-
     fi
-
 done
 
 exit 0
