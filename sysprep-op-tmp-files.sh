@@ -77,9 +77,9 @@ do
     do
         DEFIFS=${IFS}
         IFS=$'\n' # Set for convenience with df output
-        for LINE in $(mount | grep ^tmpfs | cut -d' ' -f3)
+        for MOUNTPOINT in $(mount -l -t tmpfs | cut -d' ' -f3)
         do
-            if [ "${LINE}" == "${TMP_PATH}" ]; then
+            if [ "${MOUNTPOINT}" == "${TMP_PATH}" ]; then
                 ON_TMPFS=true
                 continue # No need to test further
             fi
@@ -88,6 +88,7 @@ do
         TMP_PATH=${TMP_PATH%/*} # Set to test parent on next iteration
     done
 
+    # Perform required operations to delete temp files
     if [ "${ON_TMPFS}" = false ]; then
         # Initialise/reset the var used to store where the temp is located
         TMP_LOCATED_ON=""
