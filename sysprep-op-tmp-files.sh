@@ -77,7 +77,7 @@ do
           [[ ${ON_TMPFS} = false ]]
     do
         DEFIFS=${IFS}
-        IFS=$'\n' # Set for convenience with df output
+        IFS=$'\n' # Set for convenience with mount output
         for MOUNTPOINT in $(mount -l -t tmpfs | cut -d' ' -f3)
         do
             if [ "${MOUNTPOINT}" == "${TMP_PATH}" ]; then
