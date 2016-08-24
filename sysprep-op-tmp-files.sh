@@ -68,10 +68,27 @@ fi
 for TMP in ${TMP_LOCATIONS[@]}
 do
 
-    # Skip if the temp directory is already on a tmpfs file system
-    if [ "x$(mount | grep tmpfs | cut -d' ' -f3 | grep ^${TMP})" = "x" ]
-    then
+    # Test if the path or its parents are already on a tmpfs file system
+    TMP_PATH="${TMP}"
+    ON_TMPFS=false
 
+    while [[ ${TMP_PATH:0:1} = "/" ]] && [[ ${#TMP_PATH} > 1 ]] && \
+          [[ ${ON_TMPFS} = false ]]
+    do
+        DEFIFS=${IFS}
+        IFS=$'\n' # Set for convenience with df output
+        for LINE in $(mount | grep ^tmpfs | cut -d' ' -f3)
+        do
+            if [ "${LINE}" == "${TMP_PATH}" ]; then
+                ON_TMPFS=true
+                continue # No need to test further
+            fi
+        done
+        IFS=${DEFIFS} # Restore the default IFS and split behaviour
+        TMP_PATH=${TMP_PATH%/*} # Set to test parent on next iteration
+    done
+
+    if [ "${ON_TMPFS}" = false ]; then
         # Initialise/reset the var used to store where the temp is located
         TMP_LOCATED_ON=""
         # If the temp directory is a mounted partition we need the device
@@ -111,12 +128,19 @@ do
         # Mount or bind mount in order to access the original on disk temp
         if [ ${TMP_LOCATED_ON} = "/" ]
         then
+            # Temp file system is a folder on the root file system
             MOUNT_OPTS="--bind"
+            # Contents will be under mount point + original path e.g
+            # /mountpoint/var/tmp
             TMP_PATH="${MNTPNT_ORIG_TMP}/${TMP}"
         else
+            # Temp file system is a disk partition
             MOUNT_OPTS=""
+            # Contents will be directly available under the mount point
             TMP_PATH="${MNTPNT_ORIG_TMP}"
         fi
+        # Mount the device holding the temp file system or bind mount the
+        # root file system
         mount ${MOUNT_OPTS} ${TMP_LOCATED_ON} ${MNTPNT_ORIG_TMP}
         # Delete all files from the on-disk temp directory
         FILES=(${TMP_PATH}/*)
