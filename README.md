@@ -1,5 +1,7 @@
 # Packer-Virt-Sysprep
 
+---
+
 Scripts to clean and prepare a VM for cloning à la
 [libguestfs](http://libguestfs.org)'s
 [virt-sysprep](http://libguestfs.org/virt-sysprep.1.html) but from
@@ -15,3 +17,9 @@ Currently [libguestfs](http://libguestfs.org) is not available for all
 host platforms. Additionally
 [virt-sysprep](http://libguestfs.org/virt-sysprep.1.html) requires that
 the guest VM be shutdown prior to use.
+
+---
+
+Please see the
+[packer-virt-sysprep-example](https://github.com/DanHam/packer-virt-sysprep-example)
+repository for example usage and further details.
