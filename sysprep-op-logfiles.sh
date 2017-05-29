@@ -58,6 +58,7 @@ LOGF_LOCATIONS=(
   "/root/install.log"
   "/root/install.log.syslog"
   "/root/anaconda-ks.cfg"
+  "/root/original-ks.cfg"
   "/root/anaconda-post.log"
   "/root/initial-setup-ks.cfg"
 
