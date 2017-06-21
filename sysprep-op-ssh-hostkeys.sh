@@ -42,9 +42,14 @@ then
     fi
 
     # Add a script to create host ssh keys and reconfigure and start sshd
-    # The /etc/rc.local script is replaced with the script we need to run
-    # and restored by the script when it is run
-    cp /etc/rc.local /etc/rc.local.bak
+    # If present the /etc/rc.local script is backed up and replaced. The
+    # original script is then restored post run.
+    # If there is no /etc/rc.local script present on the system then the
+    # generated script simply deletes itself after it is run.
+    if [ -e /etc/rc.local ]
+    then
+        mv -f /etc/rc.local /etc/rc.local.bak
+    fi
     printf "%s" \
         '#!/usr/bin/env bash
         #
@@ -70,11 +75,18 @@ then
             /etc/init.d/ssh start >/dev/null 2>&1
         fi
 
-        # Restore the original /etc/rc.local script
-        mv -f /etc/rc.local.bak /etc/rc.local
+        # Remove this script and restore the original if required
+        rm -f /etc/rc.local
+        if [ -e /etc/rc.local.bak ]
+        then
+            mv -f /etc/rc.local.bak /etc/rc.local
+        fi
 
         exit 0
-    ' | sed 's/^ *//g' > /etc/rc.local
+    ' | sed -r 's/^ {8}//g' > /etc/rc.local
+
+    # Ensure the rc.local script is set to run at next boot
+    chmod 0755 /etc/rc.local
 fi
 
 exit 0
