@@ -186,8 +186,19 @@ do
             # Mount the device holding the temp file system or bind mount the
             # root file system
             mount ${MOUNT_OPTS} ${LOGD_LOCATED_ON} ${MNTPNT_ORIG_LOGD}
+            # The lastlog file cannot be created on demand for some reason
+            # and errors occur if /var/log/lastlog is missing. So, check if
+            # '/var/log/lastlog' exists and store the location so we can
+            # recreate later
+            if [ "${LOGD}" == "/var/log" ]; then
+                LASTLOG="$(find ${LOGD_PATH} -type f -name lastlog)"
+            fi
             # Delete all files from the on-disk log directory
-            find ${LOGD_PATH}/ -type f | xargs -I FILE rm -f FILE
+            find "${LOGD_PATH}" -type f | xargs -I FILE rm -f FILE
+            # Recreate the /var/log/lastlog file if required
+            if [[ "${LOGD}" == "/var/log" ]] && [[ "x${LASTLOG}" != "x" ]]; then
+                touch "${LASTLOG}"
+            fi
             # Cleanup
             umount ${MNTPNT_ORIG_LOGD} && rm -rf ${MNTPNT_ORIG_LOGD}
         fi
