@@ -23,6 +23,7 @@
 #       - Ensure the service is configured to once again start at boot
 #       - Ensure the service is running post reconfiguration
 #       - Remove itself from the system (run once only)
+set -o errexit
 
 rm -f /etc/ssh/*_host_*
 

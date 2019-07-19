@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
 # Remove DHCP client lease information
+set -o errexit
 
 LEASE_DATA_LOCATIONS=(
     "/var/lib/dhclient/*"

@@ -23,9 +23,10 @@
 #    any files from the disk by doing so from the alternate mount point.
 #
 # Static log files are removed directly at the end of the script
-
+#
 # Original log list taken from Libguestfs's sysprep_operation_logfiles.ml
 # See https://github.com/libguestfs/libguestfs/tree/master/sysprep
+set -o errexit
 
 # Absolute path to guest log file directories
 # All files under the given directories will be removed

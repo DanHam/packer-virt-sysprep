@@ -14,6 +14,7 @@
 # information for iptables in /etc/sysconfig/iptables and use the file to
 # configure the firewall at startup. As such simply deleting the file will
 # be enough to remove any custom configuration from the system
+set -o errexit
 
 FW_CONFIG_LOCATIONS=(
     "/etc/sysconfig/iptables"

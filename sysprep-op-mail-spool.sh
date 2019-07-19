@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
 # Remove mail from the local mail spool
+set -o errexit
 
 MTA_LIST=(
     "exim"

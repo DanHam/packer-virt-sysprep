@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
 # Remove cache files associated with the guests package manager
+set -o errexit
 
 # Set the locations under which various package managers store cache files
 CACHE_LOCATIONS=(

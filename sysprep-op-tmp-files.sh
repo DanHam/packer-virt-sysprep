@@ -21,6 +21,7 @@
 #    bind mount the device or file system on which the temp directory is
 #    residing to an alternate location. We can then access and remove
 #    any files from the disk by doing so from the alternate mount point.
+set -o errexit
 
 # Absolute path to guest temp file directories
 TMP_LOCATIONS=(

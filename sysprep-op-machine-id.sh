@@ -34,6 +34,7 @@
 # then the system will simply copy the dbus machine-id string
 # into /etc/machine-id on next boot - in other words a new id won't be
 # created and the old id will be copied back into /etc/machine-id
+set -o errexit
 
 # Machine ID file locations
 SYSD_ID="/etc/machine-id"
