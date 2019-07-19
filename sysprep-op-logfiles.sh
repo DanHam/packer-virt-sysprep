@@ -136,12 +136,10 @@ do
             for line in $(df | tr -s ' ')
             do
                 # Sixth column of df output is the mountpoint
-                mntpnt="$(echo ${line} | cut -d' ' -f6 | grep ^${logd}$)"
-                if [ "x${mntpnt}" != "x" ]; then
+                if echo ${line} | cut -d' ' -f6 | grep ^${logd}$ &>/dev/null; then
                     # First column of df output is the device
                     logd_located_on="$(echo ${line} | cut -d' ' -f1)"
                 fi
-                unset mntpnt
             done
             IFS=${defifs} # Restore the default IFS and split behaviour
             # If the log directory is not a mounted partition it must be on

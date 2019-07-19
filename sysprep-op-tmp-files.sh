@@ -94,12 +94,10 @@ do
         for line in $(df | tr -s ' ')
         do
             # Sixth column of df output is the mountpoint
-            mntpnt="$(echo ${line} | cut -d' ' -f6 | grep ^${tmp}$)"
-            if [ "x${mntpnt}" != "x" ]; then
+            if echo ${line} | cut -d' ' -f6 | grep ^${tmp}$ &>/dev/null; then
                 # First column of df output is the device
                 tmp_located_on="$(echo ${line} | cut -d' ' -f1)"
             fi
-            unset mntpnt
         done
         IFS=${defifs} # Restore the default IFS and split behaviour
         # If the temp directory is not a mounted partition it must be on
