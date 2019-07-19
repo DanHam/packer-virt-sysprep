@@ -18,11 +18,11 @@ mail_spool_locations=(
 for mta in ${mta_list[@]}
 do
     # Systemd
-    if [ $(command -v systemctl) ]; then
+    if command -v systemctl &>/dev/null ; then
         mta_service="$(systemctl list-units --type service | grep ${mta} | \
                        cut -d' ' -f1)"
         if [ "x${mta_service}" != "x" ]; then
-            if [ "$(systemctl is-active ${mta_service})" = "active" ]; then
+            if systemctl is-active ${mta_service} &>/dev/null; then
                 systemctl stop ${mta_service}
             fi
         fi
@@ -30,8 +30,8 @@ do
     else
         mta_service="$(find /etc/init.d/ -iname "*${mta}*")"
         if [ "x${mta_service}" != "x" ]; then
-            if [ "x$(${mta_service} status | grep running)" != "x" ]; then
-                ${mta_service} stop >/dev/null
+            if ${mta_service} status | grep running &>/dev/null; then
+                ${mta_service} stop
             fi
         fi
     fi

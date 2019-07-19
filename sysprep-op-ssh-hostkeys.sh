@@ -30,11 +30,9 @@ rm -f /etc/ssh/*_host_*
 # If Debian's package manager configuration tool is present on the system
 # we can be confident we are on a system running Debian or a Debian
 # derivative
-if [ "x$(command -v dpkg-reconfigure)" != "x" ]
-then
+if command -v dpkg-reconfigure &>/dev/null; then
     # Prevent the ssh server from starting at next boot with no host keys
-    if [ "x$(command -v systemctl)" != "x" ]
-    then
+    if command -v systemctl &>/dev/null; then
         # Systemd based system
         systemctl disable ssh.service &>/dev/null
     else
@@ -47,8 +45,7 @@ then
     # original script is then restored post run.
     # If there is no /etc/rc.local script present on the system then the
     # generated script simply deletes itself after it is run.
-    if [ -e /etc/rc.local ]
-    then
+    if [ -e /etc/rc.local ]; then
         mv -f /etc/rc.local /etc/rc.local.bak
     fi
     printf "%s" \
@@ -59,16 +56,14 @@ then
         # running post config
 
         # Generate host ssh keys if required
-        if [ "x$(find /etc/ssh/ -name "*_host_*")" = "x" ]
-        then
+        if [ "x$(find /etc/ssh/ -name "*_host_*")" = "x" ]; then
             # Reconfiguring the package triggers the post inst scripts to
             # generate the host keys
             dpkg-reconfigure openssh-server &>/dev/null
         fi
 
         # Config the ssh server to start at boot and ensure it is started
-        if [ "x$(command -v systemctl)" != "x" ]
-        then
+        if command -v systemctl &>/dev/null; then
             systemctl enable ssh.service &>/dev/null
             systemctl start ssh.service &>/dev/null
         else
@@ -78,8 +73,7 @@ then
 
         # Remove this script and restore the original if required
         rm -f /etc/rc.local
-        if [ -e /etc/rc.local.bak ]
-        then
+        if [ -e /etc/rc.local.bak ]; then
             mv -f /etc/rc.local.bak /etc/rc.local
         fi
 

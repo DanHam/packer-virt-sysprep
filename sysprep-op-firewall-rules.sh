@@ -23,8 +23,8 @@ fw_config_locations=(
 )
 
 # If using firewalld stop the daemon/service prior to removing the config
-if [ $(command -v systemctl) ]; then
-    if [ "$(systemctl is-active firewalld.service)" = "active" ]; then
+if command -v systemctl &>/dev/null; then
+    if systemctl is-active firewalld.service &>/dev/null; then
         systemctl stop firewalld.service
     fi
 fi
