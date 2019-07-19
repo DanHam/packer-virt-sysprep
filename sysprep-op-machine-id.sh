@@ -37,17 +37,17 @@
 set -o errexit
 
 # Machine ID file locations
-SYSD_ID="/etc/machine-id"
-DBUS_ID="/var/lib/dbus/machine-id"
+sysd_id="/etc/machine-id"
+dbus_id="/var/lib/dbus/machine-id"
 
 # Remove and recreate (and so empty) the machine-id file under /etc
-if [ -e ${SYSD_ID} ]; then
-    rm -f ${SYSD_ID} && touch ${SYSD_ID}
+if [ -e ${sysd_id} ]; then
+    rm -f ${sysd_id} && touch ${sysd_id}
 fi
 
 # Remove the machine-id file under /var/lib/dbus if it is not a symlink
-if [[ -e ${DBUS_ID} && ! -h ${DBUS_ID} ]]; then
-    rm -f ${DBUS_ID}
+if [[ -e ${dbus_id} && ! -h ${dbus_id} ]]; then
+    rm -f ${dbus_id}
 fi
 
 exit 0

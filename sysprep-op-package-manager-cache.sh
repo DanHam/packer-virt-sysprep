@@ -4,7 +4,7 @@
 set -o errexit
 
 # Set the locations under which various package managers store cache files
-CACHE_LOCATIONS=(
+cache_locations=(
     # Debian and derivatives
     "/var/cache/apt/archives/"
     # Fedora
@@ -16,11 +16,11 @@ CACHE_LOCATIONS=(
 )
 
 # Note that globs in the cache locations will be auto expanded by bash
-for CACHE_DIR in ${CACHE_LOCATIONS[@]}
+for cache_dir in ${cache_locations[@]}
 do
-    if [ -d ${CACHE_DIR} ]; then
+    if [ -d ${cache_dir} ]; then
         # Recursively remove all files from under the given directory
-        find ${CACHE_DIR} -type f | xargs -I FILE rm -f FILE
+        find ${cache_dir} -type f | xargs -I FILE rm -f FILE
     fi
 done
 

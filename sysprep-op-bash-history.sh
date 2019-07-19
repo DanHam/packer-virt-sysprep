@@ -3,9 +3,9 @@
 # Remove bash history for root and system users
 set -o errexit
 
-ROOTS_HIST="$(find /root -type f -name .bash_history)"
-USERS_HIST="$(find /home -type f -name .bash_history | tr -s '\n' ' ')"
+roots_hist="$(find /root -type f -name .bash_history)"
+users_hist="$(find /home -type f -name .bash_history | tr -s '\n' ' ')"
 
-rm -f ${ROOTS_HIST} ${USERS_HIST}
+rm -f ${roots_hist} ${users_hist}
 
 exit 0

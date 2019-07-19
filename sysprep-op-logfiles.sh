@@ -30,7 +30,7 @@ set -o errexit
 
 # Absolute path to guest log file directories
 # All files under the given directories will be removed
-LOGD_LOCATIONS=(
+logd_locations=(
   # Log files and directories
   "/var/log"
 
@@ -49,7 +49,7 @@ LOGD_LOCATIONS=(
 )
 
 # Absolute path to static log files that can be removed directly
-LOGF_LOCATIONS=(
+logf_locations=(
   # Logfiles configured by /etc/logrotate.d/*
   "/var/named/data/named.run"
   # Status file of logrotate
@@ -73,7 +73,7 @@ LOGF_LOCATIONS=(
 
 
 # Set mountpoint used to access original on disk content
-MNTPNT_ORIG_LOGD="/mnt/orig_log_dir"
+mntpnt_orig_logd="/mnt/orig_log_dir"
 
 # Include hidden files in glob
 shopt -s dotglob
@@ -82,16 +82,16 @@ shopt -s dotglob
 # copied into memory, we need to ensure that we don't cause an out of
 # memory condition for the guest. The limit of 128m should be extremely
 # generous for most systems
-SUM_LOGD_SPACE=0
-for LOGD in ${LOGD_LOCATIONS[@]}
+sum_logd_space=0
+for logd in ${logd_locations[@]}
 do
-    if [ -d ${LOGD} ]; then
-        LOGD_SPACE="$(du -sm ${LOGD} | cut -f1)"
+    if [ -d ${logd} ]; then
+        logd_space="$(du -sm ${logd} | cut -f1)"
     else
-        LOGD_SPACE=0
+        logd_space=0
     fi
-    SUM_LOGD_SPACE=$(( ${SUM_LOGD_SPACE} + ${LOGD_SPACE} ))
-    if [ ${SUM_LOGD_SPACE} -gt 128 ]; then
+    sum_logd_space=$(( ${sum_logd_space} + ${logd_space} ))
+    if [ ${sum_logd_space} -gt 128 ]; then
         echo "ERROR: Space for copying logs into memory > 128mb. Exiting"
         exit 1
     fi
@@ -110,106 +110,106 @@ fi
 
 
 # Remove logs from given log directories
-for LOGD in ${LOGD_LOCATIONS[@]}
+for logd in ${logd_locations[@]}
 do
-    if [ -d ${LOGD} ]; then
+    if [ -d ${logd} ]; then
         # Test if the path or its parents are already on tmpfs
-        LOGD_PATH="${LOGD}"
-        ON_TMPFS=false
+        logd_path="${logd}"
+        on_tmpfs=false
 
-        while [[ ${LOGD_PATH:0:1} = "/" ]] && [[ ${#LOGD_PATH} > 1 ]] && \
-              [[ ${ON_TMPFS} = false ]]
+        while [[ ${logd_path:0:1} = "/" ]] && [[ ${#logd_path} > 1 ]] && \
+              [[ ${on_tmpfs} = false ]]
         do
-            DEFIFS=${IFS}
+            defifs=${IFS}
             IFS=$'\n' # Set for convenience with mount output
-            for MOUNTPOINT in $(mount -l -t tmpfs | cut -d' ' -f3)
+            for mountpoint in $(mount -l -t tmpfs | cut -d' ' -f3)
             do
-                if [ "${MOUNTPOINT}" == "${LOGD_PATH}" ]; then
-                    ON_TMPFS=true
+                if [ "${mountpoint}" == "${logd_path}" ]; then
+                    on_tmpfs=true
                     continue # No need to test further
                 fi
             done
-            IFS=${DEFIFS} # Restore the default IFS and split behaviour
-            LOGD_PATH=${LOGD_PATH%/*} # Test parent on next iteration
+            IFS=${defifs} # Restore the default IFS and split behaviour
+            logd_path=${logd_path%/*} # Test parent on next iteration
         done
 
-        if [ "${ON_TMPFS}" = false ]; then
+        if [ "${on_tmpfs}" = false ]; then
             # Initialise/reset var used to store where log dir is located
-            LOGD_LOCATED_ON=""
+            logd_located_on=""
             # If log directory is a mounted partition we need the device
-            DEFIFS=${IFS} && IFS=$'\n' # Set for convenience with df output
-            for LINE in $(df | tr -s ' ')
+            defifs=${IFS} && IFS=$'\n' # Set for convenience with df output
+            for line in $(df | tr -s ' ')
             do
                 # Sixth column of df output is the mountpoint
-                MNTPNT="$(echo ${LINE} | cut -d' ' -f6 | grep ^${LOGD}$)"
-                if [ "x${MNTPNT}" != "x" ]; then
+                mntpnt="$(echo ${line} | cut -d' ' -f6 | grep ^${logd}$)"
+                if [ "x${mntpnt}" != "x" ]; then
                     # First column of df output is the device
-                    LOGD_LOCATED_ON="$(echo $LINE | cut -d' ' -f1)"
+                    logd_located_on="$(echo ${line} | cut -d' ' -f1)"
                 fi
-                unset MNTPNT
+                unset mntpnt
             done
-            IFS=${DEFIFS} # Restore the default IFS and split behaviour
+            IFS=${defifs} # Restore the default IFS and split behaviour
             # If the log directory is not a mounted partition it must be on
             # the root file system
-            [[ "x${LOGD_LOCATED_ON}" = "x" ]] && LOGD_LOCATED_ON="/"
+            [[ "x${logd_located_on}" = "x" ]] && logd_located_on="/"
 
 
             # Recreate the log directory under /dev/shm (on tmpfs)
-            SHMLOGD="/dev/shm/${LOGD}"
-            mkdir -p ${SHMLOGD}
-            chmod 1777 ${SHMLOGD}
+            shmlogd="/dev/shm/${logd}"
+            mkdir -p ${shmlogd}
+            chmod 1777 ${shmlogd}
             # Copy all files from original log dir to new tmpfs based dir
-            FILES=(${LOGD}/*) # Array allows wildcard/glob with [[ test ]]
-            [[ -e ${FILES} ]] && cp -pr ${LOGD}/* ${SHMLOGD}
+            files=(${logd}/*) # Array allows wildcard/glob with [[ test ]]
+            [[ -e ${files} ]] && cp -pr ${logd}/* ${shmlogd}
             # Replace the original disk based log directory structure with
             # the ephemeral tmpfs based storage by mounting it over the top of
             # the original log directories location on the file system
-            mount --bind ${SHMLOGD} ${LOGD}
+            mount --bind ${shmlogd} ${logd}
 
 
             # Create a mount point from which the contents of the original
             # on-disk log directory can be accessed post mount of the tmpfs
             # file system
-            mkdir ${MNTPNT_ORIG_LOGD}
+            mkdir ${mntpnt_orig_logd}
             # Mount or bind mount in order to access the original on disk logs
-            if [ ${LOGD_LOCATED_ON} = "/" ]; then
+            if [ ${logd_located_on} = "/" ]; then
                 # Temp file system is a folder on the root file system
-                MOUNT_OPTS="--bind"
+                mount_opts="--bind"
                 # Contents will be under mount point + original path e.g
                 # /mountpoint/var/tmp
-                LOGD_PATH="${MNTPNT_ORIG_LOGD}/${LOGD}"
+                logd_path="${mntpnt_orig_logd}/${logd}"
             else
                 # Temp file system is a disk partition
-                MOUNT_OPTS=""
+                mount_opts=""
                 # Contents will be directly available under the mount point
-                LOGD_PATH="${MNTPNT_ORIG_LOGD}"
+                logd_path="${mntpnt_orig_logd}"
             fi
             # Mount the device holding the temp file system or bind mount the
             # root file system
-            mount ${MOUNT_OPTS} ${LOGD_LOCATED_ON} ${MNTPNT_ORIG_LOGD}
+            mount ${mount_opts} ${logd_located_on} ${mntpnt_orig_logd}
             # The lastlog file cannot be created on demand for some reason
             # and errors occur if /var/log/lastlog is missing. So, check if
             # '/var/log/lastlog' exists and store the location so we can
             # recreate later
-            if [ "${LOGD}" == "/var/log" ]; then
-                LASTLOG="$(find ${LOGD_PATH} -type f -name lastlog)"
+            if [ "${logd}" == "/var/log" ]; then
+                lastlog="$(find ${logd_path} -type f -name lastlog)"
             fi
             # Delete all files from the on-disk log directory
-            find "${LOGD_PATH}" -type f | xargs -I FILE rm -f FILE
+            find "${logd_path}" -type f | xargs -I FILE rm -f FILE
             # Recreate the /var/log/lastlog file if required
-            if [[ "${LOGD}" == "/var/log" ]] && [[ "x${LASTLOG}" != "x" ]]; then
-                touch "${LASTLOG}"
+            if [[ "${logd}" == "/var/log" ]] && [[ "x${lastlog}" != "x" ]]; then
+                touch "${lastlog}"
             fi
             # Cleanup
-            umount ${MNTPNT_ORIG_LOGD} && rm -rf ${MNTPNT_ORIG_LOGD}
+            umount ${mntpnt_orig_logd} && rm -rf ${mntpnt_orig_logd}
         fi
     fi
 done
 
 # Remove static log files and files that may be removed directly
-for FILE in ${LOGF_LOCATIONS[@]}
+for file in ${logf_locations[@]}
 do
-    [[ -e ${FILE} ]] && rm -f ${FILE}
+    [[ -e ${file} ]] && rm -f ${file}
 done
 
 

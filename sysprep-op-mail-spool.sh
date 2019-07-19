@@ -3,35 +3,35 @@
 # Remove mail from the local mail spool
 set -o errexit
 
-MTA_LIST=(
+mta_list=(
     "exim"
     "postfix"
     "sendmail"
 )
 
-MAIL_SPOOL_LOCATIONS=(
+mail_spool_locations=(
     "/var/spool/mail/*"
     "/var/mail/*"
 )
 
 # Best effort attempt to stop any MTA service
-for MTA in ${MTA_LIST[@]}
+for mta in ${mta_list[@]}
 do
     # Systemd
     if [ $(command -v systemctl) ]; then
-        SERVICE="$(systemctl list-units --type service | grep ${MTA} | \
-                   cut -d' ' -f1)"
-        if [ "x${SERVICE}" != "x" ]; then
-            if [ "$(systemctl is-active $SERVICE)" = "active" ]; then
-                systemctl stop ${SERVICE}
+        mta_service="$(systemctl list-units --type service | grep ${mta} | \
+                       cut -d' ' -f1)"
+        if [ "x${mta_service}" != "x" ]; then
+            if [ "$(systemctl is-active ${mta_service})" = "active" ]; then
+                systemctl stop ${mta_service}
             fi
         fi
     # Sys-v-init
     else
-        SERVICE="$(find /etc/init.d/ -iname "*${MTA}*")"
-        if [ "x${SERVICE}" != "x" ]; then
-            if [ "x$(${SERVICE} status | grep running)" != "x" ]; then
-                ${SERVICE} stop >/dev/null
+        mta_service="$(find /etc/init.d/ -iname "*${mta}*")"
+        if [ "x${mta_service}" != "x" ]; then
+            if [ "x$(${mta_service} status | grep running)" != "x" ]; then
+                ${mta_service} stop >/dev/null
             fi
         fi
     fi
@@ -42,9 +42,9 @@ done
 shopt -s nullglob dotglob
 
 # Remove any mail
-for MAIL_SPOOL in ${MAIL_SPOOL_LOCATIONS[@]}
+for mail_spool in ${mail_spool_locations[@]}
 do
-    rm -rf ${MAIL_SPOOL}
+    rm -rf ${mail_spool}
 done
 
 exit 0

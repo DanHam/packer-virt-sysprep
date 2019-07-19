@@ -3,7 +3,7 @@
 # Remove DHCP client lease information
 set -o errexit
 
-LEASE_DATA_LOCATIONS=(
+lease_data_locations=(
     "/var/lib/dhclient/*"
     "/var/lib/dhcp/*"
 )
@@ -11,9 +11,9 @@ LEASE_DATA_LOCATIONS=(
 # Include hidden files in glob
 shopt -s nullglob dotglob
 
-for LEASE_DATA in ${LEASE_DATA_LOCATIONS[@]}
+for lease_data in ${lease_data_locations[@]}
 do
-    rm -rf ${LEASE_DATA}
+    rm -rf ${lease_data}
 done
 
 exit 0

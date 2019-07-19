@@ -16,7 +16,7 @@
 # be enough to remove any custom configuration from the system
 set -o errexit
 
-FW_CONFIG_LOCATIONS=(
+fw_config_locations=(
     "/etc/sysconfig/iptables"
     "/etc/firewalld/services/*"
     "/etc/firewalld/zones/*"
@@ -33,9 +33,9 @@ fi
 shopt -s nullglob dotglob
 
 # Remove any custom configuration
-for FW_CONFIG in ${FW_CONFIG_LOCATIONS[@]}
+for fw_config in ${fw_config_locations[@]}
 do
-    rm -rf ${FW_CONFIG}
+    rm -rf ${fw_config}
 done
 
 exit 0
