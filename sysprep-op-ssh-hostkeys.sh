@@ -36,10 +36,10 @@ then
     if [ "x$(command -v systemctl)" != "x" ]
     then
         # Systemd based system
-        systemctl disable ssh.service >/dev/null 2>&1
+        systemctl disable ssh.service &>/dev/null
     else
         # SysV based system
-        update-rc.d ssh disable >/dev/null 2>&1
+        update-rc.d ssh disable &>/dev/null
     fi
 
     # Add a script to create host ssh keys and reconfigure and start sshd
@@ -63,17 +63,17 @@ then
         then
             # Reconfiguring the package triggers the post inst scripts to
             # generate the host keys
-            dpkg-reconfigure openssh-server >/dev/null 2>&1
+            dpkg-reconfigure openssh-server &>/dev/null
         fi
 
         # Config the ssh server to start at boot and ensure it is started
         if [ "x$(command -v systemctl)" != "x" ]
         then
-            systemctl enable ssh.service >/dev/null 2>&1
-            systemctl start ssh.service >/dev/null 2>&1
+            systemctl enable ssh.service &>/dev/null
+            systemctl start ssh.service &>/dev/null
         else
-            update-rc.d ssh enable >/dev/null 2>&1
-            /etc/init.d/ssh start >/dev/null 2>&1
+            update-rc.d ssh enable &>/dev/null
+            /etc/init.d/ssh start &>/dev/null
         fi
 
         # Remove this script and restore the original if required
