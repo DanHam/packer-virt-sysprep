@@ -12,76 +12,94 @@
 #
 # As such, for Red Hat and Red Hat derivatives removing the hosts ssh keys
 # is all that is required to ensure new keys are generated the next time
-# the server is started. For Debian and its derivatives some additional
-# work is required to generate new keys when the server is next booted.
-# This work is comprised of the following steps:
+# the server is started. For Debian and its derivatives a service must be
+# placed on the system to run when the system is next booted. It must:
 #
-#     * The service must be configured NOT to start at boot
-#     * A script must placed on the system to run when the system is next
-#       booted. It must:
-#       - Check for and generate new host ssh keys as required
-#       - Ensure the service is configured to once again start at boot
-#       - Ensure the service is running post reconfiguration
-#       - Remove itself from the system (run once only)
+#    - Run prior to start up of the sshd server
+#    - Check for and generate new host ssh keys as required
+#    - Remove itself from the system after completion (run once only)
+#
 set -o errexit
 
+unit_file="/etc/systemd/system/generate-ssh-host-keys.service"
+unit="${unit_file##*/}"
+keygen_file="/generate-ssh-host-keys.sh"
+cleanup_file="/generate-ssh-host-keys-cleanup.sh"
+
+# Remove all ssh host key types
 rm -f /etc/ssh/*_host_*
 
 # If Debian's package manager configuration tool is present on the system
 # we can be confident we are on a system running Debian or a Debian
 # derivative
 if command -v dpkg-reconfigure &>/dev/null; then
-    # Prevent the ssh server from starting at next boot with no host keys
-    if command -v systemctl &>/dev/null; then
-        # Systemd based system
-        systemctl disable ssh.service &>/dev/null
-    else
-        # SysV based system
-        update-rc.d ssh disable &>/dev/null
-    fi
+    # Create a service that will run before the sshd service/network is up
+    printf "%s" \
+        "[Unit]
+        Description=Generate ssh host keys as required
+        Before=network-pre.target
+        Requires=network-pre.target
 
-    # Add a script to create host ssh keys and reconfigure and start sshd
-    # If present the /etc/rc.local script is backed up and replaced. The
-    # original script is then restored post run.
-    # If there is no /etc/rc.local script present on the system then the
-    # generated script simply deletes itself after it is run.
-    if [ -e /etc/rc.local ]; then
-        mv -f /etc/rc.local /etc/rc.local.bak
-    fi
+        [Service]
+        Type=oneshot
+        ExecStart=/bin/bash "${keygen_file}"
+        ExecStart=/bin/bash "${cleanup_file}"
+        ExecStop=/bin/true
+
+        [Install]
+        WantedBy=multi-user.target
+        " | sed -r 's/^ {1,}//g' > "${unit_file}"
+
+    # Create the script called by the service to generate ssh host keys
     printf "%s" \
         '#!/usr/bin/env bash
         #
-        # Ensure the existance of ssh host keys for the system.
-        # Configure the sshd service to start at boot and ensure it is
-        # running post config
-
-        # Generate host ssh keys if required
-        if [ "x$(find /etc/ssh/ -name "*_host_*")" = "x" ]; then
-            # Reconfiguring the package triggers the post inst scripts to
-            # generate the host keys
-            dpkg-reconfigure openssh-server &>/dev/null
-        fi
-
-        # Config the ssh server to start at boot and ensure it is started
-        if command -v systemctl &>/dev/null; then
-            systemctl enable ssh.service &>/dev/null
-            systemctl start ssh.service &>/dev/null
-        else
-            update-rc.d ssh enable &>/dev/null
-            /etc/init.d/ssh start &>/dev/null
-        fi
-
-        # Remove this script and restore the original if required
-        rm -f /etc/rc.local
-        if [ -e /etc/rc.local.bak ]; then
-            mv -f /etc/rc.local.bak /etc/rc.local
-        fi
+        # Generate ssh host keys for the system if required.
+        set -o errexit
+        types="rsa ecdsa ed25519" # Recommended types
+        for type in ${types}
+        do
+            keyfile="/etc/ssh/ssh_host_${type}_key"
+            # Generate the key if the file is missing or empty
+            if [ ! -s "${keyfile}" ]; then
+                echo "Generating SSH ${type^^} key"
+                /usr/bin/ssh-keygen -t "${type}" -q -N "" -f "${keyfile}"
+            fi
+        done
 
         exit 0
-    ' | sed -r 's/^ {8}//g' > /etc/rc.local
+        ' | sed -r 's/^ {8}//g' > "${keygen_file}"
 
-    # Ensure the rc.local script is set to run at next boot
-    chmod 0755 /etc/rc.local
+    # Create the script that will clean up and remove everything after the
+    # first run
+    printf "%s" \
+        "#!/usr/bin/env bash
+        #
+        # Clean up
+        set -o errexit
+
+        # Remove the generate-ssh-host-keys.service unit file
+        rm -f "${unit_file}"
+
+        # Remove the key generation script
+        rm -f "${keygen_file}"
+
+        # Reload systemd to pick up the changes
+        systemctl daemon-reload
+
+        # Remove this script
+        rm -f "${cleanup_file}"
+
+        exit 0
+        " | sed -r 's/^ {8}//g' > "${cleanup_file}"
+
+    # Manually enable the unit. Note that using systemctl commands here can
+    # cause issues if the packer-virt-sysprep scripts are themselves being
+    # executed by a systemd unit. For example, systemd will stop running
+    # the executing unit if a systemctl daemon-reload is issued in any of
+    # the scripts that it calls. This means additional ExecStop commands
+    # issued in the calling unit will not be executed.
+    ln -s ${unit_file} /etc/systemd/system/multi-user.target.wants
 fi
 
 exit 0
