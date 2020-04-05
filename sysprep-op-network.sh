@@ -10,14 +10,18 @@
 set -o errexit
 
 network_config_locations=(
-    "/etc/sysconfig/network-scripts/ifcfg-e*"
+    /etc/sysconfig/network-scripts/ifcfg-e*
 )
+
+# network: Remove MAC (HWADDR) or UUID form network-scripts/ifcfg-e* config files
+#     * /etc/sysconfig/network-scripts/ifcfg-e*
+echo "*** Remove MAC (HWADDR) or UUID form network-scripts/ifcfg-e* config files"
 
 # Include hidden files in glob
 shopt -s nullglob dotglob
 
 for network_config in "${network_config_locations[@]}"; do
-    sed -i '/^(HWADDR|UUID)=/d' "${network_config}"
+    sed -i -e "/^HWADDR=/d" -e "/^UUID=/d" "${network_config}"
 done
 
 exit 0

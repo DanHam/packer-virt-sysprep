@@ -40,6 +40,11 @@ set -o errexit
 sysd_id="/etc/machine-id"
 dbus_id="/var/lib/dbus/machine-id"
 
+# machine-id: Remove the local machine ID by removing content from:
+#     * /etc/machine-id
+#     * /var/lib/dbus/machine-id
+echo "*** Deleting the machine-ID. A new ID will be generated at next boot"
+
 # Remove and recreate (and so empty) the machine-id file under /etc
 if [ -e ${sysd_id} ]; then
     rm -f ${sysd_id} && touch ${sysd_id}

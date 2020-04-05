@@ -1,0 +1,33 @@
+name: markdown
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - '**.md'
+      - .github/workflows/markdown.yml
+  push:
+    branches:
+      - master
+    paths:
+      - '**.md'
+      - .github/workflows/markdown.yml
+
+jobs:
+  markdownlint-check:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: markdownlint-cli
+        uses: nosborn/github-action-markdown-cli@v1.1.1
+        with:
+          files: .
+
+  markdown-link-check:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Link Checker
+        uses: gaurav-nelson/github-action-markdown-link-check@v1

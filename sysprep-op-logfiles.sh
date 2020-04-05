@@ -32,48 +32,55 @@ set -o errexit
 # All files under the given directories will be removed
 logd_locations=(
   # Log files and directories
-  "/var/log"
+  /var/log
 
   # GDM and session preferences
-  "/var/cache/gdm"
-  "/var/lib/AccountService/users"
+  /var/cache/gdm
+  /var/lib/AccountService/users
 
   # Fingerprint service files
-  "/var/lib/fprint"
+  /var/lib/fprint
 
   # fontconfig caches
-  "/var/cache/fontconfig"
+  /var/cache/fontconfig
 
   # man pages cache
-  "/var/cache/man"
+  /var/cache/man
+
+  # ldconfig cache
+  /var/cache/ldconfig
 )
 
 # Absolute path to static log files that can be removed directly
 logf_locations=(
   # Logfiles configured by /etc/logrotate.d/*
-  "/var/named/data/named.run"
+  /var/named/data/named.run
   # Status file of logrotate
-  "/var/lib/logrotate.status"
+  /var/lib/logrotate.status
 
   # Installation files
-  "/root/install.log"
-  "/root/install.log.syslog"
-  "/root/anaconda-ks.cfg"
-  "/root/original-ks.cfg"
-  "/root/anaconda-post.log"
-  "/root/initial-setup-ks.cfg"
+  /root/install.log
+  /root/install.log.syslog
+  /root/anaconda-ks.cfg
+  /root/original-ks.cfg
+  /root/anaconda-post.log
+  /root/initial-setup-ks.cfg
 
   # Pegasus certificates and other files
-  "/etc/Pegasus/*.cnf"
-  "/etc/Pegasus/*.crt"
-  "/etc/Pegasus/*.csr"
-  "/etc/Pegasus/*.pem"
-  "/etc/Pegasus/*.srl"
+  /etc/Pegasus/*.cnf
+  /etc/Pegasus/*.crt
+  /etc/Pegasus/*.csr
+  /etc/Pegasus/*.pem
+  /etc/Pegasus/*.srl
 )
 
 
 # Set mountpoint used to access original on disk content
 mntpnt_orig_logd="/mnt/orig_log_dir"
+
+# logfiles: Remove logfiles at:
+#     * ...a ton of different locations!
+echo "*** Removing log files from various locations"
 
 # Include hidden files in glob
 shopt -s dotglob
@@ -83,14 +90,14 @@ shopt -s dotglob
 # memory condition for the guest. The limit of 128m should be extremely
 # generous for most systems
 sum_logd_space=0
-for logd in ${logd_locations[@]}
+for logd in "${logd_locations[@]}"
 do
-    if [ -d ${logd} ]; then
-        logd_space="$(du -sm ${logd} | cut -f1)"
+    if [ -d "${logd}" ]; then
+        logd_space="$(du -sm "${logd}" | cut -f1)"
     else
         logd_space=0
     fi
-    sum_logd_space=$(( ${sum_logd_space} + ${logd_space} ))
+    sum_logd_space=$(( sum_logd_space + logd_space ))
     if [ ${sum_logd_space} -gt 128 ]; then
         echo "ERROR: Space for copying logs into memory > 128mb. Exiting"
         exit 1
@@ -105,14 +112,14 @@ if ! mount -l -t tmpfs | grep /dev/shm &>/dev/null; then
 fi
 
 # Remove logs from given log directories
-for logd in ${logd_locations[@]}
+for logd in "${logd_locations[@]}"
 do
-    if [ -d ${logd} ]; then
+    if [ -d "${logd}" ]; then
         # Test if the path or its parents are already on tmpfs
         logd_path="${logd}"
         on_tmpfs=false
 
-        while [[ ${logd_path:0:1} = "/" ]] && [[ ${#logd_path} > 1 ]] && \
+        while [[ ${logd_path:0:1} = "/" ]] && [[ ${#logd_path} -gt 1 ]] && \
               [[ ${on_tmpfs} = false ]]
         do
             defifs=${IFS}
@@ -136,9 +143,9 @@ do
             for line in $(df | tr -s ' ')
             do
                 # Sixth column of df output is the mountpoint
-                if echo ${line} | cut -d' ' -f6 | grep ^${logd}$ &>/dev/null; then
+                if echo "${line}" | cut -d' ' -f6 | grep "^${logd}$" &>/dev/null; then
                     # First column of df output is the device
-                    logd_located_on="$(echo ${line} | cut -d' ' -f1)"
+                    logd_located_on="$(echo "${line}" | cut -d' ' -f1)"
                 fi
             done
             IFS=${defifs} # Restore the default IFS and split behaviour
@@ -149,15 +156,16 @@ do
 
             # Recreate the log directory under /dev/shm (on tmpfs)
             shmlogd="/dev/shm/${logd}"
-            mkdir -p ${shmlogd}
-            chmod 1777 ${shmlogd}
+            mkdir -p "${shmlogd}"
+            chmod 1777 "${shmlogd}"
             # Copy all files from original log dir to new tmpfs based dir
-            files=(${logd}/*) # Array allows wildcard/glob with [[ test ]]
-            [[ -e ${files} ]] && cp -pr ${logd}/* ${shmlogd}
+            if [[ -n "$(ls -A "${logd}")" ]]; then
+              cp -pr "${logd}"/* "${shmlogd}"
+            fi
             # Replace the original disk based log directory structure with
             # the ephemeral tmpfs based storage by mounting it over the top of
             # the original log directories location on the file system
-            mount --bind ${shmlogd} ${logd}
+            mount --bind "${shmlogd}" "${logd}"
 
 
             # Create a mount point from which the contents of the original
@@ -188,7 +196,7 @@ do
                 lastlog="$(find ${logd_path} -type f -name lastlog)"
             fi
             # Delete all files from the on-disk log directory
-            find "${logd_path}" -type f | xargs -I FILE rm -f FILE
+            find "${logd_path}" -type f -delete
             # Recreate the /var/log/lastlog file if required
             if [[ "${logd}" == "/var/log" ]] && [[ "x${lastlog}" != "x" ]]; then
                 touch "${lastlog}"
@@ -200,9 +208,9 @@ do
 done
 
 # Remove static log files and files that may be removed directly
-for file in ${logf_locations[@]}
+for file in "${logf_locations[@]}"
 do
-    [[ -e ${file} ]] && rm -f ${file}
+    [[ -e ${file} ]] && rm -f "${file}"
 done
 
 

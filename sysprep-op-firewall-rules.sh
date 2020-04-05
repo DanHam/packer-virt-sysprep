@@ -17,10 +17,16 @@
 set -o errexit
 
 fw_config_locations=(
-    "/etc/sysconfig/iptables"
-    "/etc/firewalld/services/*"
-    "/etc/firewalld/zones/*"
+    /etc/sysconfig/iptables
+    /etc/firewalld/services/*
+    /etc/firewalld/zones/*
 )
+
+# firewall-rules: Remove custom firewall rules by removing:
+#     * /etc/sysconfig/iptables
+#     * /etc/firewalld/services/*
+#     * /etc/firewalld/zones/*
+echo "*** Removing any custom firewall rules or firewalld configuration"
 
 # If using firewalld stop the daemon/service prior to removing the config
 if command -v systemctl &>/dev/null; then
@@ -33,9 +39,9 @@ fi
 shopt -s nullglob dotglob
 
 # Remove any custom configuration
-for fw_config in ${fw_config_locations[@]}
+for fw_config in "${fw_config_locations[@]}"
 do
-    rm -rf ${fw_config}
+    rm -rf "${fw_config}"
 done
 
 exit 0

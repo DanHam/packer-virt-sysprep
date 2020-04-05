@@ -25,12 +25,17 @@ set -o errexit
 
 # Absolute path to guest temp file directories
 tmp_locations=(
-    "/tmp"
-    "/var/tmp"
+    /tmp
+    /var/tmp
 )
 
 # Set mountpoint used to access original on disk content
 mntpnt_orig_tmp="/mnt/orig_tmp"
+
+# tmp-files: Remove all temporary files and directories by removing:
+#     * /tmp/*
+#     * /var/tmp/*
+echo "*** Removing all temporary files"
 
 # Include hidden files in glob
 shopt -s dotglob
@@ -40,14 +45,14 @@ shopt -s dotglob
 # memory condition for the guest. The limit of 128m should be extremely
 # generous for most systems
 sum_tmp_space=0
-for tmp in ${tmp_locations[@]}
+for tmp in "${tmp_locations[@]}"
 do
-    if [ -d ${tmp} ]; then
-        tmp_space="$(du -sm ${tmp} | cut -f1)"
+    if [ -d "${tmp}" ]; then
+        tmp_space="$(du -sm "${tmp}" | cut -f1)"
     else
         tmp_space=0
     fi
-    sum_tmp_space=$(( ${sum_tmp_space} + ${tmp_space} ))
+    sum_tmp_space=$(( sum_tmp_space + tmp_space ))
     if [ ${sum_tmp_space} -gt 128 ]; then
         echo "ERROR: Space for copying tmp into memory > 128mb. Exiting"
         exit 1
@@ -63,13 +68,13 @@ fi
 
 
 # Main
-for tmp in ${tmp_locations[@]}
+for tmp in "${tmp_locations[@]}"
 do
     # Test if the path or its parents are already on a tmpfs file system
     tmp_path="${tmp}"
     on_tmpfs=false
 
-    while [[ ${tmp_path:0:1} = "/" ]] && [[ ${#tmp_path} > 1 ]] && \
+    while [[ ${tmp_path:0:1} = "/" ]] && [[ ${#tmp_path} -gt 1 ]] && \
           [[ ${on_tmpfs} = false ]]
     do
         defifs=${IFS}
@@ -94,9 +99,9 @@ do
         for line in $(df | tr -s ' ')
         do
             # Sixth column of df output is the mountpoint
-            if echo ${line} | cut -d' ' -f6 | grep ^${tmp}$ &>/dev/null; then
+            if echo "${line}" | cut -d' ' -f6 | grep "^${tmp}$" &>/dev/null; then
                 # First column of df output is the device
-                tmp_located_on="$(echo ${line} | cut -d' ' -f1)"
+                tmp_located_on="$(echo "${line}" | cut -d' ' -f1)"
             fi
         done
         IFS=${defifs} # Restore the default IFS and split behaviour
@@ -107,15 +112,16 @@ do
 
         # Recreate the temp directory under /dev/shm (on tmpfs)
         shmtmp="/dev/shm/${tmp}"
-        mkdir -p ${shmtmp}
-        chmod 1777 ${shmtmp}
+        mkdir -p "${shmtmp}"
+        chmod 1777 "${shmtmp}"
         # Copy all files from original temp dir to new tmpfs based dir
-        files=(${tmp}/*) # Array allows wildcard/glob with [[ test ]]
-        [[ -e ${files} ]] && cp -pr ${tmp}/* ${shmtmp}
+        if [[ -n "$(ls -A "${tmp}")" ]]; then
+          cp -pr "${tmp}"/* "${shmtmp}"
+        fi
         # Replace the original disk based temp directory structure with
         # the ephemeral tmpfs based storage by mounting it over the top of
         # the original temp directories location on the file system
-        mount --bind ${shmtmp} ${tmp}
+        mount --bind "${shmtmp}" "${tmp}"
 
 
         # Create a mount point from which the contents of the original
@@ -139,8 +145,7 @@ do
         # root file system
         mount ${mount_opts} ${tmp_located_on} ${mntpnt_orig_tmp}
         # Delete all files from the on-disk temp directory
-        files=(${tmp_path}/*)
-        [[ -e ${files} ]] && rm -rf ${tmp_path}/*
+        rm -rf "${tmp_path:?}"/*
         # Cleanup
         umount ${mntpnt_orig_tmp} && rm -rf ${mntpnt_orig_tmp}
     fi
