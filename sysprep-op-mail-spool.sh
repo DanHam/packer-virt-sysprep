@@ -4,14 +4,14 @@
 set -o errexit
 
 mta_list=(
-    exim
-    postfix
-    sendmail
+    "exim"
+    "postfix"
+    "sendmail"
 )
 
 mail_spool_locations=(
-    /var/spool/mail/*
-    /var/mail/*
+    "/var/spool/mail/*"
+    "/var/mail/*"
 )
 
 # mail-spool: Remove email from the local mail spool directory
@@ -47,7 +47,8 @@ done
 shopt -s nullglob dotglob
 
 # Remove any mail
-for mail_spool in "${mail_spool_locations[@]}"
+# shellcheck disable=SC2068
+for mail_spool in ${mail_spool_locations[@]}
 do
     rm -rf "${mail_spool}"
 done

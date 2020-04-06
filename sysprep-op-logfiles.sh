@@ -32,46 +32,46 @@ set -o errexit
 # All files under the given directories will be removed
 logd_locations=(
   # Log files and directories
-  /var/log
+  "/var/log"
 
   # GDM and session preferences
-  /var/cache/gdm
-  /var/lib/AccountService/users
+  "/var/cache/gdm"
+  "/var/lib/AccountService/users"
 
   # Fingerprint service files
-  /var/lib/fprint
+  "/var/lib/fprint"
 
   # fontconfig caches
-  /var/cache/fontconfig
+  "/var/cache/fontconfig"
 
   # man pages cache
-  /var/cache/man
+  "/var/cache/man"
 
   # ldconfig cache
-  /var/cache/ldconfig
+  "/var/cache/ldconfig"
 )
 
 # Absolute path to static log files that can be removed directly
 logf_locations=(
   # Logfiles configured by /etc/logrotate.d/*
-  /var/named/data/named.run
+  "/var/named/data/named.run"
   # Status file of logrotate
-  /var/lib/logrotate.status
+  "/var/lib/logrotate.status"
 
   # Installation files
-  /root/install.log
-  /root/install.log.syslog
-  /root/anaconda-ks.cfg
-  /root/original-ks.cfg
-  /root/anaconda-post.log
-  /root/initial-setup-ks.cfg
+  "/root/install.log"
+  "/root/install.log.syslog"
+  "/root/anaconda-ks.cfg"
+  "/root/original-ks.cfg"
+  "/root/anaconda-post.log"
+  "/root/initial-setup-ks.cfg"
 
   # Pegasus certificates and other files
-  /etc/Pegasus/*.cnf
-  /etc/Pegasus/*.crt
-  /etc/Pegasus/*.csr
-  /etc/Pegasus/*.pem
-  /etc/Pegasus/*.srl
+  "/etc/Pegasus/*.cnf"
+  "/etc/Pegasus/*.crt"
+  "/etc/Pegasus/*.csr"
+  "/etc/Pegasus/*.pem"
+  "/etc/Pegasus/*.srl"
 )
 
 
@@ -90,7 +90,8 @@ shopt -s dotglob
 # memory condition for the guest. The limit of 128m should be extremely
 # generous for most systems
 sum_logd_space=0
-for logd in "${logd_locations[@]}"
+# shellcheck disable=SC2068
+for logd in ${logd_locations[@]}
 do
     if [ -d "${logd}" ]; then
         logd_space="$(du -sm "${logd}" | cut -f1)"
@@ -112,7 +113,8 @@ if ! mount -l -t tmpfs | grep /dev/shm &>/dev/null; then
 fi
 
 # Remove logs from given log directories
-for logd in "${logd_locations[@]}"
+# shellcheck disable=SC2068
+for logd in ${logd_locations[@]}
 do
     if [ -d "${logd}" ]; then
         # Test if the path or its parents are already on tmpfs
@@ -208,7 +210,8 @@ do
 done
 
 # Remove static log files and files that may be removed directly
-for file in "${logf_locations[@]}"
+# shellcheck disable=SC2068
+for file in ${logf_locations[@]}
 do
     [[ -e ${file} ]] && rm -f "${file}"
 done

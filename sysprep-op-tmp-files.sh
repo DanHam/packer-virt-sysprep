@@ -25,8 +25,8 @@ set -o errexit
 
 # Absolute path to guest temp file directories
 tmp_locations=(
-    /tmp
-    /var/tmp
+    "/tmp"
+    "/var/tmp"
 )
 
 # Set mountpoint used to access original on disk content
@@ -45,7 +45,8 @@ shopt -s dotglob
 # memory condition for the guest. The limit of 128m should be extremely
 # generous for most systems
 sum_tmp_space=0
-for tmp in "${tmp_locations[@]}"
+# shellcheck disable=SC2068
+for tmp in ${tmp_locations[@]}
 do
     if [ -d "${tmp}" ]; then
         tmp_space="$(du -sm "${tmp}" | cut -f1)"
@@ -68,7 +69,8 @@ fi
 
 
 # Main
-for tmp in "${tmp_locations[@]}"
+# shellcheck disable=SC2068
+for tmp in ${tmp_locations[@]}
 do
     # Test if the path or its parents are already on a tmpfs file system
     tmp_path="${tmp}"

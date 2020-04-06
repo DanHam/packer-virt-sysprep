@@ -17,9 +17,9 @@
 set -o errexit
 
 fw_config_locations=(
-    /etc/sysconfig/iptables
-    /etc/firewalld/services/*
-    /etc/firewalld/zones/*
+    "/etc/sysconfig/iptables"
+    "/etc/firewalld/services/*"
+    "/etc/firewalld/zones/*"
 )
 
 # firewall-rules: Remove custom firewall rules by removing:
@@ -39,7 +39,8 @@ fi
 shopt -s nullglob dotglob
 
 # Remove any custom configuration
-for fw_config in "${fw_config_locations[@]}"
+# shellcheck disable=SC2068
+for fw_config in ${fw_config_locations[@]}
 do
     rm -rf "${fw_config}"
 done
