@@ -34,8 +34,10 @@ done
 # By default Ubuntu server installation (mini.iso) creates the `/etc/netplan/01-netcfg.yaml` and installing ubuntu-desktop using tasksel
 # adds `/etc/netplan/01-network-manager-all.yaml`. Having both these files for Ubuntu Desktop brings problems.
 # Some details can be found here: https://github.com/hashicorp/vagrant/issues/11378
-# In short the `/etc/netplan/01-netcfg.yaml` should not be present on the Ubuntu Desktop installation. `
+# In short the `/etc/netplan/01-netcfg.yaml` should not be present on the Ubuntu Desktop installation.
 # `/etc/netplan/01-network-manager-all.yaml` should be used for NetworkManager configuration (only)
+
+echo "*** Remove /etc/netplan/01-netcfg.yaml in Ubuntu Desktop"
 
 if [[ -s "${netplan_networkd_config}" ]] && [[ -s "${netplan_networkmanager_config}" ]]; then
   rm "${netplan_networkd_config}"
