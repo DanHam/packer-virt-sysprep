@@ -145,7 +145,7 @@ do
         fi
         # Mount the device holding the temp file system or bind mount the
         # root file system
-        mount ${mount_opts} ${tmp_located_on} ${mntpnt_orig_tmp}
+        mount "${mount_opts}" ${tmp_located_on} ${mntpnt_orig_tmp}
         # Delete all files from the on-disk temp directory
         rm -rf "${tmp_path:?}"/*
         # Cleanup

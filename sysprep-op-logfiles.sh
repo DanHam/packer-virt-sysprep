@@ -189,7 +189,7 @@ do
             fi
             # Mount the device holding the temp file system or bind mount the
             # root file system
-            mount ${mount_opts} ${logd_located_on} ${mntpnt_orig_logd}
+            mount "${mount_opts}" ${logd_located_on} ${mntpnt_orig_logd}
             # The lastlog file cannot be created on demand for some reason
             # and errors occur if /var/log/lastlog is missing. So, check if
             # '/var/log/lastlog' exists and store the location so we can
