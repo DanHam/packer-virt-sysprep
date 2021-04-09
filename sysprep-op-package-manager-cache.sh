@@ -6,7 +6,7 @@ set -o errexit
 # Set the locations under which various package managers store cache files
 cache_locations=(
     # Debian and derivatives
-    "/var/cache/apt/archives/"
+    "/var/cache/apt/"
     # Fedora
     "/var/cache/dnf/"
     # Red Hat and derivatives
